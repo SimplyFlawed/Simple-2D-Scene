@@ -34,14 +34,14 @@ const float BG_RED = 0.7411f,
             BG_OPACITY = 1.0f;
 
 const int VIEWPORT_X = 0,
-VIEWPORT_Y = 0,
-VIEWPORT_WIDTH = WINDOW_WIDTH,
-VIEWPORT_HEIGHT = WINDOW_HEIGHT;
+          VIEWPORT_Y = 0,
+          VIEWPORT_WIDTH = WINDOW_WIDTH,
+          VIEWPORT_HEIGHT = WINDOW_HEIGHT;
 
 const float MILLISECONDS_IN_SECOND = 1000.0;
 
 const char V_SHADER_PATH[] = "shaders/vertex_textured.glsl",
-F_SHADER_PATH[] = "shaders/fragment_textured.glsl";
+           F_SHADER_PATH[] = "shaders/fragment_textured.glsl";
 
 const char JETT_SPRITE[] = "assets/jett.png";
 const char KNIFE_SPRITE[] = "assets/knife.png";
@@ -58,27 +58,43 @@ float g_previous_ticks = 0.0f;
 
 ShaderProgram g_shader_program;
 glm::mat4 g_view_matrix,
-          g_knife_matrix,
+          g_knife1_matrix,
+          g_knife2_matrix,
+          g_knife3_matrix,
           g_jett_matrix,
           g_projection_matrix;
 
-GLuint g_jett_texture_id;
-GLuint g_knife_texture_id;
+GLuint g_jett_texture_id,
+       g_knife_texture_id;
 
 // Jett movement
 glm::vec3 g_jett_position = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 g_jett_movement = glm::vec3(0.0f, 0.0f, 0.0f);
 
-// ——————————— GLOBAL VARS AND CONSTS FOR TRANSFORMATIONS ——————————— //
 
-const float RADIUS = 2.0f;      // radius of your circle
-const float ROT_SPEED = 1.0f;  // rotational speed
-float       g_angle = 0.0f;     // current angle
-float       g_x_coord = RADIUS, // current x and y coordinates
-            g_y_coord = 0.0f,
-            g_jett_speed = 5.0f;
+// Transformation variables
 
-// —————————————————————————————————————————————————————————————————— //
+float g_jett_speed = 5.0f;
+
+const float RADIUS = 2.0f;
+const float ROT_SPEED = 1.0f;
+const float PI = 3.14159f;
+
+    // Knife 1
+float g_angle1 = 0.0f,
+      g_x_coord1 = RADIUS, 
+      g_y_coord1 = 0.0f;
+
+    // Knife 2
+float g_angle2 = 0.0f,
+      g_x_coord2 = RADIUS,
+      g_y_coord2 = 0.0f;
+
+    // Knife 3
+float g_angle3 = 0.0f,
+      g_x_coord3 = RADIUS,
+      g_y_coord3 = 0.0f;
+
 
 GLuint load_texture(const char* filepath)
 {
@@ -129,7 +145,9 @@ void initialise()
     g_shader_program.load(V_SHADER_PATH, F_SHADER_PATH);
 
     g_view_matrix = glm::mat4(1.0f);
-    g_knife_matrix = glm::mat4(1.0f);
+    g_knife1_matrix = glm::mat4(1.0f);
+    g_knife2_matrix = glm::mat4(1.0f);
+    g_knife3_matrix = glm::mat4(1.0f);
     g_jett_matrix = glm::mat4(1.0f);
     g_projection_matrix = glm::ortho(-5.0f, 5.0f, -3.75f, 3.75f, -1.0f, 1.0f);
 
@@ -224,14 +242,32 @@ void update()
     g_previous_ticks = ticks;
 
 
-    // Knife orbit
-    g_angle += ROT_SPEED * delta_time * 1.0f;
+    // Knife1 orbit
+    g_angle1 += ROT_SPEED * delta_time * 1.0f;
 
-    g_x_coord = RADIUS * glm::cos(g_angle);
-    g_y_coord = RADIUS * glm::sin(g_angle);
+    g_x_coord1 = RADIUS * glm::cos(g_angle1);
+    g_y_coord1 = RADIUS * glm::sin(g_angle1);
 
-    g_knife_matrix = glm::mat4(1.0f);
-    g_knife_matrix = glm::translate(g_jett_matrix, glm::vec3(g_x_coord, g_y_coord, 0.0f));
+    g_knife1_matrix = glm::mat4(1.0f);
+    g_knife1_matrix = glm::translate(g_jett_matrix, glm::vec3(g_x_coord1, g_y_coord1, 0.0f));
+
+    // Knife2 orbit
+    g_angle2 += ROT_SPEED * delta_time * 1.0f;
+
+    g_x_coord2 = RADIUS * glm::cos(g_angle2 + (2 * PI / 3));
+    g_y_coord2 = RADIUS * glm::sin(g_angle2 + (2 * PI / 3));
+
+    g_knife2_matrix = glm::mat4(1.0f);
+    g_knife2_matrix = glm::translate(g_jett_matrix, glm::vec3(g_x_coord2, g_y_coord2, 0.0f));
+
+    // Knife3 orbit
+    g_angle3 += ROT_SPEED * delta_time * 1.0f;
+
+    g_x_coord3 = RADIUS * glm::cos(g_angle3 + (4 * PI / 3));
+    g_y_coord3 = RADIUS * glm::sin(g_angle3 + (4 * PI / 3));
+
+    g_knife3_matrix = glm::mat4(1.0f);
+    g_knife3_matrix = glm::translate(g_jett_matrix, glm::vec3(g_x_coord3, g_y_coord3, 0.0f));
 
     // Jett movement
     g_jett_position += g_jett_movement * g_jett_speed * delta_time;
@@ -250,7 +286,7 @@ void draw_object(glm::mat4& object_model_matrix, GLuint& object_texture_id)
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    g_shader_program.set_model_matrix(g_knife_matrix);
+    g_shader_program.set_model_matrix(g_knife1_matrix);
 
     // Vertices
     float knife_vertices[] =
@@ -267,13 +303,13 @@ void render() {
 
     // Textures
     float knife_texture_coordinates[] = {
-        0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,     // triangle 1
-        0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,     // triangle 2
+        0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,
     };
 
     float jett_texture_coordinates[] = {
-        0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,     // triangle 1
-        0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,     // triangle 2
+        0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+        0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f,
     };
 
     glVertexAttribPointer(g_shader_program.get_position_attribute(), 2, GL_FLOAT, false, 0, knife_vertices);
@@ -285,7 +321,9 @@ void render() {
     glEnableVertexAttribArray(g_shader_program.get_tex_coordinate_attribute());
 
     // Bind texture
-    draw_object(g_knife_matrix, g_knife_texture_id);
+    draw_object(g_knife1_matrix, g_knife_texture_id);
+    draw_object(g_knife2_matrix, g_knife_texture_id);
+    draw_object(g_knife3_matrix, g_knife_texture_id);
     draw_object(g_jett_matrix, g_jett_texture_id);
 
     // We disable two attribute arrays now
