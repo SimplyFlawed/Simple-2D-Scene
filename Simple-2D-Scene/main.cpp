@@ -54,7 +54,8 @@ SDL_Window* g_display_window;
 
 bool g_game_is_running = true;
 bool g_is_growing = true;
-float g_previous_ticks = 0.0f;
+float g_previous_ticks = 0.0f,
+      g_frame_counter;
 
 ShaderProgram g_shader_program;
 glm::mat4 g_view_matrix,
@@ -74,6 +75,9 @@ glm::vec3 g_jett_movement = glm::vec3(0.0f, 0.0f, 0.0f);
 
 // Transformation variables
 
+const float GROWTH_FACTOR = 1.01f,
+            SHRINK_FACTOR = 0.99f;
+const int MAX_FRAME = 100;
 float g_jett_speed = 5.0f;
 
 const float RADIUS = 2.0f;
@@ -240,6 +244,7 @@ void update()
     float ticks = (float)SDL_GetTicks() / MILLISECONDS_IN_SECOND; // get the current number of ticks
     float delta_time = ticks - g_previous_ticks; // the delta time is the difference from the last frame
     g_previous_ticks = ticks;
+    g_frame_counter++;
 
 
     // Knife1 orbit
@@ -274,6 +279,20 @@ void update()
 
     g_jett_matrix = glm::mat4(1.0f);
     g_jett_matrix = glm::translate(g_jett_matrix, g_jett_position);
+
+    glm::vec3 scale_vector;
+
+    if (g_frame_counter >= MAX_FRAME)
+    {
+        g_is_growing = !g_is_growing;
+        g_frame_counter = 0;
+    }
+
+    scale_vector = glm::vec3(g_is_growing ? GROWTH_FACTOR : SHRINK_FACTOR,
+                             g_is_growing ? GROWTH_FACTOR : SHRINK_FACTOR, 1.0f);
+
+    g_jett_matrix = glm::scale(g_jett_matrix, scale_vector * delta_time * 1.0f);
+ 
 }
 
 void draw_object(glm::mat4& object_model_matrix, GLuint& object_texture_id)
@@ -286,7 +305,10 @@ void draw_object(glm::mat4& object_model_matrix, GLuint& object_texture_id)
 void render() {
     glClear(GL_COLOR_BUFFER_BIT);
 
+    g_shader_program.set_model_matrix(g_jett_matrix);
     g_shader_program.set_model_matrix(g_knife1_matrix);
+    g_shader_program.set_model_matrix(g_knife2_matrix);
+    g_shader_program.set_model_matrix(g_knife3_matrix);
 
     // Vertices
     float knife_vertices[] =
